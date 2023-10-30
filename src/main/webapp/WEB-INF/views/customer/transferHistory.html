@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>List of customers</title>
+  <th:block th:replace="layout/head :: head" />
+</head>
+<body>
+<div class="container">
+  <header>
+    <nav class="navbar bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand">Transfer's Histories</a>
+        <div class="d-flex" style="gap: 10px;">
+
+          <a href="/customers">
+            <button class="btn btn-outline-light" type="button">
+              <i class="fas fa-list-ul"></i>
+              Customer list
+            </button>
+          </a>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <div class="content">
+    <table class="table table-hover">
+      <thead>
+      <tr>
+        <th>#</th>
+        <th>Sender Name</th>
+        <th>Sender Recipient</th>
+        <th>Transfer Amount ($)</th>
+        <th>Fees (%)</th>
+        <th>Transaction Amount ($)</th>
+        <th>Time</th>
+      </tr>
+      </thead>
+      <tbody>
+      <th:block th:each="item : ${transfers}">
+        <tr>
+          <td th:text="${item.id}"></td>
+          <td th:text="${item.sender.fullName}"></td>
+          <td th:text="${item.recipient.fullName}"></td>
+          <td th:text="${item.transferAmount}"></td>
+          <td th:text="${item.fees}"></td>
+          <td th:text="${item.transactionAmount}"></td>
+          <td th:text="${item.transferDate}"></td>
+        </tr>
+      </th:block>
+
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</body>
+</html>

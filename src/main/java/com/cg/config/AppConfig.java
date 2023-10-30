@@ -33,7 +33,6 @@ import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import java.util.Properties;
 
-
 @Configuration
 @EnableWebMvc
 @EnableTransactionManagement
@@ -107,7 +106,7 @@ public class AppConfig implements WebMvcConfigurer, ApplicationContextAware {
     public DataSource getDataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        dataSource.setUrl("jdbc:mysql://localhost:3306/c0323_banking_location?characterEncoding=UTF-8");
+        dataSource.setUrl("jdbc:mysql://localhost:3306/banking_06?characterEncoding=UTF-8");
         dataSource.setUsername("root");
         dataSource.setPassword("110130046");
         return dataSource;
@@ -150,5 +149,4 @@ public class AppConfig implements WebMvcConfigurer, ApplicationContextAware {
         bean.setValidationMessageSource(messageSource());
         return bean;
     }
-
 }

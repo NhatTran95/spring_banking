@@ -4,13 +4,14 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IGeneralService<E, T> {
+
     List<E> findAll();
 
-    Optional<E> findById(T id);
+    Optional<E> findById(T t);
 
-    E save(E e);
+    void create(E e);
 
-    void delete(E e);
+    void update(T t, E e);
 
-    void deleteById(T t);
+    void removeById(T t);
 }

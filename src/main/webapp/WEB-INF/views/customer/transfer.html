@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Deposit</title>
+  <th:block th:replace="layout/head :: head"/>
+</head>
+<body>
+<div class="container">
+  <header>
+    <nav class="navbar bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand">Transfer money</a>
+        <div class="d-flex" style="gap: 10px;">
+          <a href="/customers">
+            <button class="btn btn-outline-light" type="button">
+              <i class="fas fa-list-ul"></i>
+              Customers list
+            </button>
+          </a>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <div class="content">
+    <form th:object="${transfer}" method="post">
+      <div class="row mb-3 mt-3">
+        <div class="col-lg-3">
+          <label for="id" class="form-label">Sender ID</label>
+          <input type="text" class="form-control" id="id" th:field="*{sender.id}" readonly>
+        </div>
+        <div class="col-lg-3">
+          <label for="fullName" class="form-label">Sender Name</label>
+          <input type="text" class="form-control" id="fullName" th:field="*{sender.fullName}" readonly>
+        </div>
+        <div class="col-lg-3">
+          <label for="email" class="form-label">Email</label>
+          <input type="text" class="form-control" id="email" th:field="*{sender.email}" readonly>
+        </div>
+        <div class="col-lg-3">
+          <label for="balance" class="form-label">Sender balance ($)</label>
+          <input type="text" class="form-control" id="balance" th:field="*{sender.balance}" readonly>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-lg-3">
+          <label for="recipientName" class="form-label">Recipient Name</label>
+          <select id="recipientName" class="form-control" th:field="*{recipient.id}">
+            <option th:each="item : ${recipients}"
+                    th:text="${'(' + item.id + ') ' + item.fullName}"
+                    th:value="${item.id}">
+            </option>
+          </select>
+        </div>
+        <div class="col-lg-3">
+          <label for="transferAmount" class="form-label">Transfer amount</label>
+          <input type="number" class="form-control" id="transferAmount" th:field="*{transferAmount}" oninput= "changeTotalAmount()">
+        </div>
+        <div class="col-lg-3">
+          <label for="fees" class="form-label">Fees (%)</label>
+          <input type="text" class="form-control" id="fees" value="10" readonly>
+        </div>
+        <div class="col-lg-3">
+          <label for="totalAmount" class="form-label">Total amount of transaction ($)</label>
+          <input type="text" class="form-control" id="totalAmount" readonly>
+        </div>
+
+      </div>
+
+      <div class="row pt-3">
+        <div class="col-lg-3">
+          <button type="submit" class="btn btn-outline-primary">
+            <i class="fas fa-exchange-alt"></i>
+            Transfer
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<th:block th:if="${success == true}">
+  <footer class="container-fluid success">
+    <div class="container">
+      <div class="notification">
+        <p class="success" th:text="${message}"></p>
+      </div>
+    </div>
+  </footer>
+</th:block>
+
+<th:block th:if="${success == false}">
+  <footer class="container-fluid error">
+    <div class="container">
+      <div class="notification">
+        <p class="error" th:text="${message}"></p>
+      </div>
+    </div>
+  </footer>
+</th:block>
+
+<script>
+
+  let transferAmount = document.querySelector("#transferAmount");
+  let totalAmount = document.querySelector("#totalAmount");
+  let fees = document.querySelector("#fees");
+  function changeTotalAmount(){
+    let amount = parseFloat(transferAmount.value);
+    let total = amount + amount*fees.value/100;
+    totalAmount.value = Math.round(total);
+  }
+</script>
+
+</body>
+</html>

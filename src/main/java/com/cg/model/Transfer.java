@@ -7,34 +7,37 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Date;
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
 @Entity
 @Table(name = "transfers")
-public class Transfer extends BaseEntity{
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+public class Transfer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "transfer_amount", precision = 12, scale = 0, nullable = false)
+    @ManyToOne
+    private Customer sender;
+
+    @ManyToOne
+    private Customer recipient;
+
     private BigDecimal transferAmount;
 
     private Long fees;
 
-    @Column(name = "fees_amount", precision = 12, scale = 0, nullable = false)
     private BigDecimal feesAmount;
 
-    @Column(name = "transation_amount", precision = 12, scale = 0, nullable = false)
     private BigDecimal transactionAmount;
 
-    @ManyToOne
-    @JoinColumn(name = "sender_id", referencedColumnName = "id", nullable = false)
-    private Customer sender;
+    private Boolean deleted;
 
-    @ManyToOne
-    @JoinColumn(name = "recipient_id", referencedColumnName = "id", nullable = false)
-    private Customer recipient;
+    private Date transferDate;
+
+
 }

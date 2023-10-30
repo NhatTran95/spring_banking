@@ -1,38 +1,43 @@
 package com.cg.service.customer;
 
-import com.cg.exception.DataInputException;
-import com.cg.model.*;
-import com.cg.model.dto.CustomerResDTO;
-import com.cg.model.dto.TransferReqDTO;
-import com.cg.repository.*;
-import com.cg.utils.ValidateUtils;
+import com.cg.dto.response.CustomerResDTO;
+import com.cg.model.Customer;
+import com.cg.model.Deposit;
+import com.cg.model.Transfer;
+import com.cg.model.Withdraw;
+import com.cg.repository.ICustomerRepository;
+import com.cg.repository.IDepositRepository;
+import com.cg.repository.ITransferRepository;
+import com.cg.repository.IWithdrawRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-
+import java.util.stream.Collectors;
 @Service
 @Transactional
+@AllArgsConstructor
 public class CustomerServiceImpl implements ICustomerService {
 
-    @Autowired
-    private ICustomerRepository customerRepository;
+    private final ICustomerRepository customerRepository;
 
-    @Autowired
-    private ILocationRegionRepository locationRegionRepository;
+    private final IDepositRepository depositRepository;
 
-    @Autowired
-    private IDepositRepository depositRepository;
+    private final IWithdrawRepository withdrawRepository;
 
-    @Autowired
-    private IWithdrawRepository withdrawRepository;
+    private final ITransferRepository transferRepository;
 
-    @Autowired
-    private ITransferRepository transferRepository;
-
+    @Override
+    public List<CustomerResDTO> findAllCustomerResDTO() {
+        return customerRepository.findAllCustomerResDTO();
+    }
 
     @Override
     public List<Customer> findAll() {
@@ -41,147 +46,76 @@ public class CustomerServiceImpl implements ICustomerService {
 
     @Override
     public Optional<Customer> findById(Long id) {
+
         return customerRepository.findById(id);
     }
 
-
     @Override
-    public List<CustomerResDTO> findAllCustomerResDTO(Boolean deleted) {
-        return customerRepository.findAllCustomerResDTO(deleted);
-    }
-
-    @Override
-    public Customer create(Customer customer) {
-        LocationRegion locationRegion = customer.getLocationRegion();
-        locationRegionRepository.save(locationRegion);
-
-        customer.setLocationRegion(locationRegion);
+    public void create(Customer customer) {
         customer.setBalance(BigDecimal.ZERO);
         customerRepository.save(customer);
-
-        return customer;
     }
 
     @Override
-    public Customer update(Customer customer) {
-
-        Customer oldCus = findById(customer.getId()).get();
-        customer.setBalance(oldCus.getBalance());
-        customer.setDeleted(oldCus.getDeleted());
-        locationRegionRepository.save(customer.getLocationRegion());
+    public void update(Long id, Customer customer) {
+        Optional<Customer> customerOld = customerRepository.findById(id);
+        customer.setBalance(customerOld.get().getBalance());
         customerRepository.save(customer);
 
-        return customer;
     }
 
+    @Override
+    public void removeById(Long id) {
+        customerRepository.deleteById(id);
+
+    }
 
     @Override
     public void deposit(Deposit deposit) {
+        deposit.setDepositDate(new Date());
         depositRepository.save(deposit);
 
-        Long customerId = deposit.getCustomer().getId();
+        Long idCustomer = deposit.getCustomer().getId();
         BigDecimal transactionAmount = deposit.getTransactionAmount();
-        customerRepository.incrementBalance(customerId, transactionAmount);
+        customerRepository.incrementBalance(idCustomer, transactionAmount);
     }
 
     @Override
-    public void withdraw(Withdraw withdraw){
+    public void withdraw(Withdraw withdraw) {
+        withdraw.setWithdrawDate(new Date());
         withdrawRepository.save(withdraw);
 
-        Long customerId = withdraw.getCustomer().getId();
+        Long idCustomer = withdraw.getCustomer().getId();
         BigDecimal transactionAmount = withdraw.getTransactionAmount();
-        customerRepository.decrementBalance(customerId, transactionAmount);
+        customerRepository.decrementBalance(idCustomer, transactionAmount);
     }
 
     @Override
-    public void transfer(TransferReqDTO transferReqDTO) {
-        if (!ValidateUtils.isNumberValid(transferReqDTO.getSenderId())) {
-            throw new DataInputException("Mã người gửi không hợp lệ");
-        }
+    public void transfer(Transfer transfer) {
+        transfer.setTransferDate(new Date());
+        transferRepository.save(transfer);
 
-        if (!ValidateUtils.isNumberValid(transferReqDTO.getRecipientId())) {
-            throw new DataInputException("Mã người nhận không hợp lệ");
-        }
+        Long idSender = transfer.getSender().getId();
+        Long idRecipient = transfer.getRecipient().getId();
+        BigDecimal transferAmount = transfer.getTransferAmount();
+        BigDecimal transactionAmount = transfer.getTransactionAmount();
 
-        if (!ValidateUtils.isNumberValid(transferReqDTO.getTransferAmount())) {
-            throw new DataInputException("Số tiền giao dịch không hợp lệ");
-        }
-
-        Long senderId = Long.parseLong(transferReqDTO.getSenderId());
-        Long recipientId = Long.parseLong(transferReqDTO.getRecipientId());
-
-        if (senderId.equals(recipientId)) {
-            throw new DataInputException("Mã người gửi và người nhận phải khác nhau");
-        }
-
-        String transferAmountStr = transferReqDTO.getTransferAmount();
-
-        if (transferAmountStr.length() > 7) {
-            throw new DataInputException("Số tiền chuyển khoản tối đa là $1.000.000");
-        }
-
-        BigDecimal transferAmount = BigDecimal.valueOf(Long.parseLong(transferAmountStr));
-
-        Customer sender = customerRepository.findById(senderId).orElseThrow(() -> {
-            throw new DataInputException("Mã người gửi không tồn tại");
-        });
-
-        Customer recipient = customerRepository.findById(recipientId).orElseThrow(() -> {
-            throw new DataInputException("Mã người nhận không tồn tại");
-        });
-
-        BigDecimal minValue = BigDecimal.valueOf(1000);
-        BigDecimal maxValue = BigDecimal.valueOf(1000000);
-
-        if (transferAmount.compareTo(minValue) < 0) {
-            throw new DataInputException("Số tiền chuyển khoản ít nhất là $1.000");
-        }
-
-        if (transferAmount.compareTo(maxValue) > 0) {
-            throw new DataInputException("Số tiền chuyển khoản tối đa là $1.000.000");
-        }
-
-        long fees = 10L;
-        BigDecimal feesAmount = transferAmount.multiply(BigDecimal.valueOf(fees)).divide(BigDecimal.valueOf(100));
-        BigDecimal transactionAmount = transferAmount.add(feesAmount);
-
-        BigDecimal senderCurrentBalance = sender.getBalance();
-
-        if (transactionAmount.compareTo(senderCurrentBalance) > 0) {
-            throw new DataInputException("Số dư người gửi không đủ để thực hiện chuyển khoản");
-        }
-
-        try {
-            customerRepository.decrementBalance(senderId, transactionAmount);
-
-            Transfer transfer = new Transfer();
-            transfer.setSender(sender);
-            transfer.setRecipient(recipient);
-            transfer.setTransferAmount(transferAmount);
-            transfer.setFees(fees);
-            transfer.setFeesAmount(feesAmount);
-            transfer.setTransactionAmount(transactionAmount);
-            transferRepository.save(transfer);
-
-            customerRepository.incrementBalance(recipientId, transferAmount);
-        }
-        catch (Exception ex) {
-            throw new DataInputException("Vui lòng liên hệ Administrator");
-        }
-    }
-
-    @Override
-    public Customer save(Customer customer) {
-        return customerRepository.save(customer);
-    }
-
-    @Override
-    public void delete(Customer customer) {
+        customerRepository.decrementBalance(idSender, transactionAmount);
+        customerRepository.incrementBalance(idRecipient, transferAmount);
 
     }
 
     @Override
-    public void deleteById(Long aLong) {
-
+    public List<Customer> findAllWithoutId(Long id) {
+        List<Customer> customers = customerRepository.findAllByDeleted(false);
+        return customers.stream().filter(cus -> !cus.getId().equals(id)).collect(Collectors.toList());
     }
+
+    @Override
+    public List<Transfer> findAllTransfer(){
+        List<Transfer> transfers = transferRepository.findAll();
+        return transfers;
+    }
+
+
 }

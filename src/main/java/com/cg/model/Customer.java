@@ -1,81 +1,54 @@
 package com.cg.model;
 
-import com.cg.model.dto.CustomerDepositResDTO;
-import com.cg.model.dto.CustomerResDTO;
+import com.cg.dto.response.CustomerResDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.List;
 
-
-@NoArgsConstructor
-@AllArgsConstructor
-@Getter
-@Setter
 @Entity
 @Table(name = "customers")
-public class Customer extends BaseEntity {
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Where(clause = "deleted = 0")
+@SQLDelete(sql = "UPDATE customers SET `deleted` = 1 WHERE (`id` = ?);")
+
+public class Customer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "full_name")
     private String fullName;
 
     private String email;
 
     private String phone;
 
-    @Column(precision = 10, scale = 0, nullable = false, updatable = false)
+    private String address;
+
+    @Column(precision = 12, scale = 0, updatable = false)
     private BigDecimal balance;
 
-    @OneToOne
-    @JoinColumn(name = "location_region_id", referencedColumnName = "id", nullable = false)
-    private LocationRegion locationRegion;
+    private Boolean deleted = false;
 
-    @OneToMany(mappedBy = "customer", fetch = FetchType.EAGER)
-    private List<Deposit> deposits;
-
-    @OneToMany()
-    private List<Withdraw> withdraws;
-
-    @Override
-    public String toString() {
-        return "Customer{" +
-                "id=" + id +
-                ", fullName='" + fullName + '\'' +
-                ", email='" + email + '\'' +
-                ", phone='" + phone + '\'' +
-                ", balance=" + balance +
-                ", locationRegion=" + locationRegion +
-                '}';
-    }
-
-    public CustomerResDTO toCustomerResDTO() {
+    //ham chuyen cus sang cusDTO
+    public CustomerResDTO toCustomerResDTO(){
         return new CustomerResDTO()
                 .setId(id)
                 .setFullName(fullName)
                 .setEmail(email)
-                .setPhone(phone)
+                .setAddress(address)
                 .setBalance(balance)
-                .setLocationRegion(locationRegion.toLocationRegionResDTO())
-                ;
-
+                .setPhone(phone);
     }
 
-    public CustomerDepositResDTO toCustomerDepositResDTO() {
-        return new CustomerDepositResDTO()
-                .setId(id)
-                .setFullName(fullName)
-                .setEmail(email)
-                .setPhone(phone)
-                .setBalance(balance)
-                .setLocationRegion(locationRegion.toLocationRegionResDTO())
-                ;
-    }
 }
